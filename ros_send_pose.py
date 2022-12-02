@@ -138,14 +138,14 @@ try:
                found_dict_pixel_space[""+str(ids[i][0])] = corners4 # put the corners of this tag in the dictionary
           
            # Homography
-         #   zero = found_dict_pixel_space[str(bottom_left)][0][3] #bottom left - 3
-         #   x = found_dict_pixel_space[str(bottom_right)][0][2] #bottom right - 27
-         #   y = found_dict_pixel_space[str(top_left)][0][0] #top left - 22
-         #   xy = found_dict_pixel_space[str(top_right)][0][1] #top right - 24
-           zero = found_dict_pixel_space[str(bottom_left)][0][0] #bottom left - 1
-           x = found_dict_pixel_space[str(bottom_right)][0][3] #bottom right - 4
-           y = found_dict_pixel_space[str(top_left)][0][1] #top left - 2
-           xy = found_dict_pixel_space[str(top_right)][0][2] #top right - 3
+           zero = found_dict_pixel_space[str(bottom_left)][0][3] #bottom left - 3
+           x = found_dict_pixel_space[str(bottom_right)][0][2] #bottom right - 27
+           y = found_dict_pixel_space[str(top_left)][0][0] #top left - 22
+           xy = found_dict_pixel_space[str(top_right)][0][1] #top right - 24
+        #    zero = found_dict_pixel_space[str(bottom_left)][0][0] #bottom left - 1
+        #    x = found_dict_pixel_space[str(bottom_right)][0][3] #bottom right - 4
+        #    y = found_dict_pixel_space[str(top_left)][0][1] #top left - 2
+        #    xy = found_dict_pixel_space[str(top_right)][0][2] #top right - 3
 
            workspace_world_corners = np.array([[0.0, 0.0], [worldx, 0.0], [0.0, worldy], [worldx, worldy]], np.float32) # 4 corners in millimeters
            workspace_pixel_corners = np.array([zero,x,y,xy], np.float32)  # 4 corners in pixels
@@ -153,7 +153,8 @@ try:
            # Homography Matrix
            h, status = cv2.findHomography(workspace_pixel_corners, workspace_world_corners) #perspective matrix
            im_out = cv2.warpPerspective(image, h, (worldx,worldy)) #showing that it works
-          
+           im_out= cv2.flip(im_out, 0)
+
            for i in range(len(ids)):
                j = ids[i][0]
                corners_pix = found_dict_pixel_space[str(j)]#[0]
