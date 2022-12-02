@@ -8,7 +8,7 @@ import rospy
 from turtlesim.msg import Pose
 
 rospy.init_node('camera_perspective', anonymous=True)
-pose_publisher = rospy.Publisher('/turtle1/pose', Pose, queue_size=10)
+# pose_publisher = rospy.Publisher('/turtle1/pose', Pose, queue_size=10)
 goal_publisher = rospy.Publisher('/turtle1/goal',Pose,queue_size=10)
 robot_pose = Pose()
 robot_goal = Pose()
@@ -25,8 +25,11 @@ top_right = 3
 marker_dimension = 0.046  #4.6 centimeter before
 # worldx = 889 #508#-marker_dimension*1000 #millimeters
 # worldy = 508 #401#-marker_dimension*1000 #millimeters
-worldx = 162*5 #508#-marker_dimension*1000 #millimeters length and width of the area
-worldy = 108*5 #401#-marker_dimension*1000 #millimeters
+# worldx = 162*5 #508#-marker_dimension*1000 #millimeters length and width of the area
+# worldy = 108*5 #401#-marker_dimension*1000 #millimeters
+
+worldx = 11 # size for turtlesim
+worldy = 11 
 
 
 def getMarkerCenter(corners):
@@ -187,10 +190,10 @@ try:
     #    robot_pose.theta = getMarkerRotation(robot_)
     #    pose_publisher.publish(robot_pose)
        
-       robot_pose.x = robot_center[0]
-       robot_pose.y = robot_center[1]
-       robot_pose.theta = robot_angle
-       pose_publisher.publish(robot_pose)
+      #  robot_pose.x = robot_center[0]
+      #  robot_pose.y = robot_center[1]
+      #  robot_pose.theta = robot_angle
+      #  pose_publisher.publish(robot_pose)
 
        robot_goal.x = getMarkerCenter(robot_)[0]
        robot_goal.y = getMarkerCenter(robot_)[1]
