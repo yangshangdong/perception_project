@@ -45,17 +45,33 @@ class turtlebot():
         goal_pose.y = self.goal.y#input("Set your y goal:")
         print("x:",goal_pose.x)
         print("y:",goal_pose.y)
-
+        print(1)
+        print("theta",atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
         distance_tolerance = 0.5#input("Set your tolerance:")
         vel_msg = Twist()
 
+        
+
+        while abs((atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta))>0.1:
+            vel_msg.angular.z = 0.2
+            # vel_msg.angular.z = 0.2 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
+            self.velocity_publisher.publish(vel_msg)
+            print("line_theta:",atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x))
+            print("robot_theta:",self.pose.theta)
+            print("goal_xy",goal_pose.x,goal_pose.y)
+            print("pose_xy",self.pose.x,self.pose.y)
+            print((atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta))
+
+            self.rate.sleep()
+        print("finish rotating")            
 
         while sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2)) >= distance_tolerance:
 
             #Porportional Controller
             #linear velocity in the x-axis:
             # vel_msg.linear.x = 1.5 * sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
-            vel_msg.linear.x = 1.5/100 * sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
+            # vel_msg.linear.x = 1.5/10 * sqrt(pow((goal_pose.x - self.pose.x), 2) + pow((goal_pose.y - self.pose.y), 2))
+            vel_msg.linear.x = 0.1
             vel_msg.linear.y = 0
             vel_msg.linear.z = 0
 
@@ -63,11 +79,13 @@ class turtlebot():
             vel_msg.angular.x = 0
             vel_msg.angular.y = 0
             # vel_msg.angular.z = 4 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
-            vel_msg.angular.z = 4/3 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
+            vel_msg.angular.z = 4/6 * (atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x) - self.pose.theta)
+            # vel_msg.linear.x = 0.05
 
             #Publishing our vel_msg
             self.velocity_publisher.publish(vel_msg)
             self.rate.sleep()
+        print("finish forward")   
         #Stopping our robot after the movement is over
         vel_msg.linear.x = 0
         vel_msg.angular.z =0

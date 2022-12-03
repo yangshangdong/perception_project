@@ -1,6 +1,7 @@
 
 import cv2
 import numpy as np
+import math
 from cv2 import aruco
 import time
 
@@ -37,9 +38,10 @@ def getMarkerCenter(corners):
 def getMarkerRotation(corners):
  unit_x_axis = [1.,0.]
  center = getMarkerCenter(corners)
- right_edge_midpoint = (corners[1]+corners[2])/2.
+ right_edge_midpoint = (corners[0]+corners[1])/2.
  unit_vec = (right_edge_midpoint-center)/np.linalg.norm(right_edge_midpoint-center)
- angle = np.arccos(np.dot(unit_x_axis,unit_vec))
+#  angle = np.arccos(np.dot(unit_x_axis,unit_vec))
+ angle = math.atan2(right_edge_midpoint[1] - center[1], right_edge_midpoint[0] - center[0])
  return angle
 
 def inversePerspective(rvec, tvec):
