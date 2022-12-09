@@ -109,11 +109,11 @@ class turtlebot():
         if yolo_class == 0:  #cup
             target_pose = Pose()
             target_pose.x = 9
-            target_pose.y = 1
+            target_pose.y = 0
         else:
             target_pose = Pose()
             target_pose.x = 9
-            target_pose.y = 9
+            target_pose.y = 10
         print("target x:",target_pose.x)
         print("target y:",target_pose.y)
         distance_tolerance = 0.5#input("Set your tolerance:")
@@ -163,40 +163,14 @@ class turtlebot():
         self.velocity_publisher.publish(vel_msg)
         time.sleep(1) 
 
-        # while sqrt(pow((start_pose.x - self.pose.x), 2) + pow((start_pose.y - self.pose.y), 2)) >= distance_tolerance: #go back
+        while sqrt(pow((start_pose.x - self.pose.x), 2) + pow((start_pose.y - self.pose.y), 2)) >= 1: #go back
 
-        #     #Porportional Controller
-        #     #linear velocity in the x-axis:
-        #     # vel_msg.linear.x = 1.5 * sqrt(pow((target_pose.x - self.pose.x), 2) + pow((target_pose.y - self.pose.y), 2))
-        #     # vel_msg.linear.x = 1.5/10 * sqrt(pow((target_pose.x - self.pose.x), 2) + pow((target_pose.y - self.pose.y), 2))
-        #     # vel_msg.linear.x = 0.1 #turtlebot3
-        #     vel_msg.linear.x = -1 #turtlsim
-        #     vel_msg.linear.y = 0
-        #     vel_msg.linear.z = 0
-
-        #     #angular velocity in the z-axis:
-        #     vel_msg.angular.x = 0
-        #     vel_msg.angular.y = 0
-        #     # vel_msg.angular.z = 4 * (atan2(target_pose.y - self.pose.y, target_pose.x - self.pose.x) - self.pose.theta)
-        #     vel_msg.angular.z = 4/6 * (atan2(target_pose.y - self.pose.y, target_pose.x - self.pose.x) - self.pose.theta)
-        #     # vel_msg.linear.x = 0.05
-
-        #     #Publishing our vel_msg
-        #     self.velocity_publisher.publish(vel_msg)
-        #     self.rate.sleep()
-        # print("finish forward")   
-
-
-
-        #Porportional Controller
-        #linear velocity in the x-axis:
-        # vel_msg.linear.x = 1.5 * sqrt(pow((target_pose.x - self.pose.x), 2) + pow((target_pose.y - self.pose.y), 2))
-        # vel_msg.linear.x = 1.5/10 * sqrt(pow((target_pose.x - self.pose.x), 2) + pow((target_pose.y - self.pose.y), 2))
-        # vel_msg.linear.x = 0.1 #turtlebot3
-        n = 0
-        while n<2:        
-            # vel_msg.linear.x = -1 #turtlsim
-            vel_msg.linear.x = -0.1 #turtlebot
+            #Porportional Controller
+            #linear velocity in the x-axis:
+            # vel_msg.linear.x = 1.5 * sqrt(pow((target_pose.x - self.pose.x), 2) + pow((target_pose.y - self.pose.y), 2))
+            # vel_msg.linear.x = 1.5/10 * sqrt(pow((target_pose.x - self.pose.x), 2) + pow((target_pose.y - self.pose.y), 2))
+            # vel_msg.linear.x = 0.1 #turtlebot3
+            vel_msg.linear.x = -1 #turtlsim
             vel_msg.linear.y = 0
             vel_msg.linear.z = 0
 
@@ -206,31 +180,66 @@ class turtlebot():
             # vel_msg.angular.z = 4 * (atan2(target_pose.y - self.pose.y, target_pose.x - self.pose.x) - self.pose.theta)
             vel_msg.angular.z = 4/6 * (atan2(target_pose.y - self.pose.y, target_pose.x - self.pose.x) - self.pose.theta)
             # vel_msg.linear.x = 0.05
-            
+
             #Publishing our vel_msg
             self.velocity_publisher.publish(vel_msg)
             self.rate.sleep()
-            # time.sleep(10) #backward 2 second            
-            n = n+1
-        print("finish backward")  
-        self.flag_publisher.publish(True)
+        print("finish forward")   
 
-        #Stopping our robot after the movement is over
-        vel_msg.linear.x = 0
-        vel_msg.angular.z =0
-        self.velocity_publisher.publish(vel_msg)
+
+
+        #Porportional Controller
+        #linear velocity in the x-axis:
+        # vel_msg.linear.x = 1.5 * sqrt(pow((target_pose.x - self.pose.x), 2) + pow((target_pose.y - self.pose.y), 2))
+        # vel_msg.linear.x = 1.5/10 * sqrt(pow((target_pose.x - self.pose.x), 2) + pow((target_pose.y - self.pose.y), 2))
+        # vel_msg.linear.x = 0.1 #turtlebot3
+        # n = 0
+        # while n<2:        
+        #     # vel_msg.linear.x = -1 #turtlsim
+        #     vel_msg.linear.x = -0.1 #turtlebot
+        #     vel_msg.linear.y = 0
+        #     vel_msg.linear.z = 0
+
+        #     #angular velocity in the z-axis:
+        #     vel_msg.angular.x = 0
+        #     vel_msg.angular.y = 0
+        #     # vel_msg.angular.z = 4 * (atan2(target_pose.y - self.pose.y, target_pose.x - self.pose.x) - self.pose.theta)
+        #     vel_msg.angular.z = 4/6 * (atan2(target_pose.y - self.pose.y, target_pose.x - self.pose.x) - self.pose.theta)
+        #     # vel_msg.linear.x = 0.05
+            
+        #     #Publishing our vel_msg
+        #     self.velocity_publisher.publish(vel_msg)
+        #     self.rate.sleep()
+        #     # time.sleep(10) #backward 2 second            
+        #     n = n+1
+        # print("finish backward")  
+        # self.flag_publisher.publish(True)
+
+        # #Stopping our robot after the movement is over
+        # vel_msg.linear.x = 0
+        # vel_msg.angular.z =0
+        # self.velocity_publisher.publish(vel_msg)
         
 
         # rospy.spin()
 
+    def Move(self):
+        while self.goal.x != 0 and self.goal.y !=0 :
+            self.move2goal()
+            print('Finish to goal!')
+            self.move2target(1) #0 for cuo, 1 for paper
+            print('Finish to target!')
+
+
+
+
+
 if __name__ == '__main__':   #only excecute once
     try:
+        rospy.spin()
         #Testing our function
         x = turtlebot()
         time.sleep(1) #need some time to initlize the subscriber
-        x.move2goal()
-        print('Finish to goal!')
-        x.move2target(1) #0 for cuo, 1 for paper
-        print('Finish to target!')
-        rospy.spin()
+        x.Move()
+        
     except rospy.ROSInterruptException: pass
