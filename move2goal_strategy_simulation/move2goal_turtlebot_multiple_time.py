@@ -227,7 +227,7 @@ class turtlebot():
         while self.goal.x != 0 and self.goal.y !=0 :
             self.move2goal()
             print('Finish to goal!')
-            self.move2target(1) #0 for cuo, 1 for paper
+            self.move2target(self.goal.theta) #0 for cuo, 1 for paper
             print('Finish to target!')
 
 
