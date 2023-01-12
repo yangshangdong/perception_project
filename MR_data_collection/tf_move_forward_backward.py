@@ -19,16 +19,16 @@ class CalibrateLinear():
         self.move_forward()
         rospy.loginfo("22222")
         self.move_backward()
-        rospy.loginfo("3333322")
-        self.move_forward()
+        # rospy.loginfo("3333322")
+        # self.move_forward()
         
 
 
     def move_forward(self):
         r = rospy.Rate(self.rate)
         # Set the distance to travel
-        self.test_distance =  1.0 # meters
-        self.speed =  0.15 # meters per second
+        self.test_distance =  0.5 # meters
+        self.speed =  0.10 # meters per second
         self.tolerance = 0.01 # meters
         self.odom_linear_scale_correction = 1.0
         self.start_test = True
@@ -51,7 +51,7 @@ class CalibrateLinear():
         # Make sure we see the odom and base frames
         self.tf_listener.waitForTransform(self.odom_frame, self.base_frame, rospy.Time(), rospy.Duration(60.0))        
             
-        rospy.loginfo("Bring up rqt_reconfigure to control the test.")
+        rospy.loginfo("Start to move forward")
   
         self.position = Point()
         
@@ -108,8 +108,8 @@ class CalibrateLinear():
     def move_backward(self):
         r = rospy.Rate(self.rate)
         # Set the distance to travel
-        self.test_distance = rospy.get_param('~test_distance', 1.0) # meters
-        self.speed = rospy.get_param('~speed', 0.15) # meters per second
+        self.test_distance = 0.5# meters
+        self.speed = 0.10 # meters per second
         self.tolerance = rospy.get_param('~tolerance', 0.01) # meters
         self.odom_linear_scale_correction = rospy.get_param('~odom_linear_scale_correction', 1.0)
         self.start_test = rospy.get_param('~start_test', True)
@@ -132,7 +132,7 @@ class CalibrateLinear():
         # Make sure we see the odom and base frames
         self.tf_listener.waitForTransform(self.odom_frame, self.base_frame, rospy.Time(), rospy.Duration(60.0))        
             
-        rospy.loginfo("Bring up rqt_reconfigure to control the test.")
+        rospy.loginfo("start to move backward")
   
         self.position = Point()
         
@@ -201,6 +201,6 @@ class CalibrateLinear():
 if __name__ == '__main__':
     try:
         CalibrateLinear()
-        rospy.spin()
+        # rospy.spin()
     except:
         rospy.loginfo("Calibration terminated.")
