@@ -5,7 +5,7 @@
 import cv2
 import numpy as np
 
-cap = cv2.VideoCapture(1) #4 for intel realsense
+cap = cv2.VideoCapture(6) #4 for intel realsense
 while(1):
     # get a frame
     ret, frame = cap.read()

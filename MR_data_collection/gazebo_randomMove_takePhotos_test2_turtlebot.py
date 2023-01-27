@@ -1,15 +1,25 @@
-#!/usr/bin/env python
 
 
+
+import os
 import rospy
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+import cv2
 from geometry_msgs.msg import Twist, Quaternion,Point
 import tf
 from math import radians, copysign,sqrt,pow,pi
 import random
 import PyKDL
+     
 
-class RandomMove():
+class RandomMoveWithCamera:
     def __init__(self):
+        self.image_received = False
+        self.bridge = CvBridge()
+        # self.image_sub = rospy.Subscriber("camera/rgb/image_raw", Image, self.image_callback) # simulation
+        self.image_sub = rospy.Subscriber("usb_cam/image_raw", Image, self.image_callback) # real world
+
         # Give the node a name
         rospy.init_node('random_move_node', anonymous=False)
         
@@ -19,14 +29,34 @@ class RandomMove():
         # How fast will we check the odometry values?
         self.rate = 20
 
-        # self.move_forward()
-        # self.move_backward()
-        # self.move_right()
-        # self.move_left()
-        for count in range(3):  #random move for 10 times
+        # Create a folder to save the images
+        self.path = '/home/xtark/Desktop/perception_project/MR_data_collection/turtlebot_photos'
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
+
+        for i in range(20000):  #random move for i times
+            rospy.sleep(0.1)
+            self.take_photo(i)
+            rospy.loginfo("Take photo "+str(i+1))
             self.random_move()
+        self.take_photo(i+1)
+        rospy.loginfo("Take photo "+str(i+2))
 
+    def image_callback(self, data):
+        try:
+            self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+        except CvBridgeError as e:
+            print(e)
+        
+        self.image_received = True
+        # rospy.loginfo("Image received!")
 
+    def take_photo(self,i):
+        while not self.image_received:
+            rospy.sleep(0.1)
+        self.image_received = False
+        # Save the image with a specific name
+        cv2.imwrite(self.path+'/image'+str(i+1)+'.png', self.cv_image)           
 
     def random_move(self):
         # Use the random.randint() function to choose a number between 0 and 3
@@ -43,8 +73,86 @@ class RandomMove():
     def move_forward(self):
         r = rospy.Rate(self.rate)
         # Set the distance to travel
-        self.test_distance =  1.0 # meters
-        self.speed =  0.15 # meters per second
+        self.test_distance =  0.15 # meters
+        self.speed = 0.10 # meters per second
+        self.tolerance =  0.01 # meters
+        self.odom_linear_scale_correction = rospy.get_param('~odom_linear_scale_correction', 1.0)
+        self.start_test = rospy.get_param('~start_test', True)
+        
+        # Publisher to control the robot's speed
+        self.cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=5)       
+ 
+        # The base frame is base_footprint for the TurtleBot but base_link for Pi Robot
+        self.base_frame =  '/base_footprint'
+
+        # The odom frame is usually just /odom
+        self.odom_frame = '/odom'
+
+        # Initialize the tf listener
+        self.tf_listener = tf.TransformListener()
+        
+        # Give tf some time to fill its buffer
+        rospy.sleep(1)
+        
+        # Make sure we see the odom and base frames
+        self.tf_listener.waitForTransform(self.odom_frame, self.base_frame, rospy.Time(), rospy.Duration(60.0))        
+            
+        rospy.loginfo("move forward 0.15m")
+  
+        self.position = Point()
+        
+        # Get the starting position from the tf transform between the odom and base frames
+        self.position = self.get_position()
+        
+        x_start = self.position.x
+        y_start = self.position.y
+            
+        move_cmd = Twist()
+        error = 1.0
+        # while not rospy.is_shutdown():
+        while abs(error) >  self.tolerance:
+            # Stop the robot by default
+            move_cmd = Twist()
+            
+            if self.start_test:
+                # Get the current position from the tf transform between the odom and base frames
+                self.position = self.get_position()
+                
+                # Compute the Euclidean distance from the target point
+                distance = sqrt(pow((self.position.x - x_start), 2) +
+                                pow((self.position.y - y_start), 2))
+                                
+                # Correct the estimated distance by the correction factor
+                distance *= self.odom_linear_scale_correction
+                
+                # How close are we?
+                error =  distance - self.test_distance
+                # rospy.loginfo(error)
+                
+                # Are we close enough?
+                if not self.start_test or abs(error) <  self.tolerance:
+                    self.start_test = False
+                    params = {'start_test': False}
+                else:
+                    # If not, move in the appropriate direction
+                    move_cmd.linear.x = -self.speed #copysign(self.speed, -1 * error)
+            else:
+                self.position = self.get_position()
+                x_start = self.position.x
+                y_start = self.position.y
+                
+            self.cmd_vel.publish(move_cmd)
+            r.sleep()
+
+        # Stop the robot
+        self.cmd_vel.publish(Twist())
+
+
+    def move_backward(self):
+        r = rospy.Rate(self.rate)
+        # Set the distance to travel
+        self.test_distance =  0.15 # meters
+        self.speed =  0.10 # meters per second
         self.tolerance = 0.01 # meters
         self.odom_linear_scale_correction = 1.0
         self.start_test = True
@@ -62,12 +170,12 @@ class RandomMove():
         self.tf_listener = tf.TransformListener()
         
         # Give tf some time to fill its buffer
-        # rospy.sleep(2)
+        rospy.sleep(1)
         
         # Make sure we see the odom and base frames
         self.tf_listener.waitForTransform(self.odom_frame, self.base_frame, rospy.Time(), rospy.Duration(60.0))        
             
-        rospy.loginfo("Start to move forward")
+        rospy.loginfo("move backward 0.15m")
   
         self.position = Point()
         
@@ -121,88 +229,13 @@ class RandomMove():
         self.cmd_vel.publish(Twist())
         
 
-    def move_backward(self):
-        r = rospy.Rate(self.rate)
-        # Set the distance to travel
-        self.test_distance = rospy.get_param('~test_distance', 1.0) # meters
-        self.speed = rospy.get_param('~speed', 0.15) # meters per second
-        self.tolerance = rospy.get_param('~tolerance', 0.01) # meters
-        self.odom_linear_scale_correction = rospy.get_param('~odom_linear_scale_correction', 1.0)
-        self.start_test = rospy.get_param('~start_test', True)
-        
-        # Publisher to control the robot's speed
-        self.cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=5)       
- 
-        # The base frame is base_footprint for the TurtleBot but base_link for Pi Robot
-        self.base_frame =  '/base_footprint'
 
-        # The odom frame is usually just /odom
-        self.odom_frame = '/odom'
-
-        # Initialize the tf listener
-        self.tf_listener = tf.TransformListener()
-        
-        # Give tf some time to fill its buffer
-        # rospy.sleep(2)
-        
-        # Make sure we see the odom and base frames
-        self.tf_listener.waitForTransform(self.odom_frame, self.base_frame, rospy.Time(), rospy.Duration(60.0))        
-            
-        rospy.loginfo("start to move backward")
-  
-        self.position = Point()
-        
-        # Get the starting position from the tf transform between the odom and base frames
-        self.position = self.get_position()
-        
-        x_start = self.position.x
-        y_start = self.position.y
-            
-        move_cmd = Twist()
-        error = 1.0
-        # while not rospy.is_shutdown():
-        while abs(error) >  self.tolerance:
-            # Stop the robot by default
-            move_cmd = Twist()
-            
-            if self.start_test:
-                # Get the current position from the tf transform between the odom and base frames
-                self.position = self.get_position()
-                
-                # Compute the Euclidean distance from the target point
-                distance = sqrt(pow((self.position.x - x_start), 2) +
-                                pow((self.position.y - y_start), 2))
-                                
-                # Correct the estimated distance by the correction factor
-                distance *= self.odom_linear_scale_correction
-                
-                # How close are we?
-                error =  distance - self.test_distance
-                # rospy.loginfo(error)
-                
-                # Are we close enough?
-                if not self.start_test or abs(error) <  self.tolerance:
-                    self.start_test = False
-                    params = {'start_test': False}
-                else:
-                    # If not, move in the appropriate direction
-                    move_cmd.linear.x = -self.speed #copysign(self.speed, -1 * error)
-            else:
-                self.position = self.get_position()
-                x_start = self.position.x
-                y_start = self.position.y
-                
-            self.cmd_vel.publish(move_cmd)
-            r.sleep()
-
-        # Stop the robot
-        self.cmd_vel.publish(Twist())
 
     def move_left(self):
         r = rospy.Rate(self.rate)
         
         # The test angle is 360 degrees
-        self.test_angle = radians(180.0)
+        self.test_angle = radians(10.0)
 
         self.speed = rospy.get_param('~speed', 0.5) # radians per second
         self.tolerance = radians(rospy.get_param('tolerance', 1)) # degrees converted to radians
@@ -222,12 +255,12 @@ class RandomMove():
         self.tf_listener = tf.TransformListener()
         
         # Give tf some time to fill its buffer
-        # rospy.sleep(2)
+        rospy.sleep(1)
         
         # Make sure we see the odom and base frames
         self.tf_listener.waitForTransform(self.odom_frame, self.base_frame, rospy.Time(), rospy.Duration(60.0))
             
-        rospy.loginfo("Start to move left")
+        rospy.loginfo("move left 10 degrees")
         
         reverse = 1
         
@@ -287,7 +320,7 @@ class RandomMove():
         r = rospy.Rate(self.rate)
         
         # The test angle is 360 degrees
-        self.test_angle = radians(180.0)
+        self.test_angle = radians(10.0)
 
         self.speed = rospy.get_param('~speed', 0.5) # radians per second
         self.tolerance = radians(rospy.get_param('tolerance', 1)) # degrees converted to radians
@@ -307,12 +340,12 @@ class RandomMove():
         self.tf_listener = tf.TransformListener()
         
         # Give tf some time to fill its buffer
-        # rospy.sleep(2)
+        rospy.sleep(1)
         
         # Make sure we see the odom and base frames
         self.tf_listener.waitForTransform(self.odom_frame, self.base_frame, rospy.Time(), rospy.Duration(60.0))
             
-        rospy.loginfo("Start to move right")
+        rospy.loginfo("move right 10 degrees")
         
         reverse = -1
         
@@ -410,8 +443,13 @@ class RandomMove():
         self.cmd_vel.publish(Twist())
         rospy.sleep(1)
  
+
+
+
+ 
 if __name__ == '__main__':
     try:
-        RandomMove()
+       RandomMoveWithCamera()
+    #    rospy.spin
     except:
         rospy.loginfo("Program terminated.")

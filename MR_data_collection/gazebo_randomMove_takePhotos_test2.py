@@ -1,15 +1,24 @@
-#!/usr/bin/env python
 
 
+
+import os
 import rospy
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+import cv2
 from geometry_msgs.msg import Twist, Quaternion,Point
 import tf
 from math import radians, copysign,sqrt,pow,pi
 import random
 import PyKDL
+     
 
-class RandomMove():
+class RandomMoveWithCamera:
     def __init__(self):
+        self.image_received = False
+        self.bridge = CvBridge()
+        self.image_sub = rospy.Subscriber("camera/rgb/image_raw", Image, self.image_callback)
+
         # Give the node a name
         rospy.init_node('random_move_node', anonymous=False)
         
@@ -19,14 +28,33 @@ class RandomMove():
         # How fast will we check the odometry values?
         self.rate = 20
 
-        # self.move_forward()
-        # self.move_backward()
-        # self.move_right()
-        # self.move_left()
-        for count in range(3):  #random move for 10 times
+        # Create a folder to save the images
+        self.path = '/home/xtark/Desktop/perception_project/MR_data_collection/photos'
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
+
+        for i in range(3):  #random move for 3 times
+            self.take_photo(i)
+            rospy.loginfo("Take photo "+str(i+1))
             self.random_move()
+        self.take_photo(i+1)
+        rospy.loginfo("Take photo "+str(i+2))
 
+    def image_callback(self, data):
+        try:
+            self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+        except CvBridgeError as e:
+            print(e)
+        
+        self.image_received = True
+        # rospy.loginfo("Image received!")
 
+    def take_photo(self,i):
+        while not self.image_received:
+            rospy.sleep(0.1)
+        self.image_received = False
+        # Save the image with a specific name
+        cv2.imwrite(self.path+'/image'+str(i+1)+'.png', self.cv_image)           
 
     def random_move(self):
         # Use the random.randint() function to choose a number between 0 and 3
@@ -410,8 +438,13 @@ class RandomMove():
         self.cmd_vel.publish(Twist())
         rospy.sleep(1)
  
+
+
+
+ 
 if __name__ == '__main__':
     try:
-        RandomMove()
+       RandomMoveWithCamera()
+    #    rospy.spin
     except:
         rospy.loginfo("Program terminated.")

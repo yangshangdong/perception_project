@@ -1,12 +1,44 @@
-#!/usr/bin/env python
 
 
+
+import os
 import rospy
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+import cv2
 from geometry_msgs.msg import Twist, Quaternion,Point
 import tf
 from math import radians, copysign,sqrt,pow,pi
 import random
 import PyKDL
+
+
+class Camera:
+    def __init__(self, path):
+        self.photos_taken = 0
+        self.path = path
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
+        self.bridge = CvBridge()
+        self.image_sub = rospy.Subscriber('/camera/rgb/image_raw', Image, self.image_callback)
+
+    def image_callback(self, data):
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+        except CvBridgeError as e:
+            print(e)
+
+        filename = 'image' + str(self.photos_taken) + '.jpg'
+        file_path = os.path.join(self.path, filename)
+        cv2.imwrite(file_path, cv_image)
+        self.photos_taken += 1
+        print("Taken photo: ", self.photos_taken)
+
+    def take_photo(self):
+        self.image_sub.unregister()
+        self.image_sub = rospy.Subscriber('/camera/rgb/image_raw', Image, self.image_callback)
+
+
 
 class RandomMove():
     def __init__(self):
@@ -18,13 +50,13 @@ class RandomMove():
         
         # How fast will we check the odometry values?
         self.rate = 20
-
-        # self.move_forward()
-        # self.move_backward()
-        # self.move_right()
-        # self.move_left()
-        for count in range(3):  #random move for 10 times
-            self.random_move()
+        # self.camera = Camera(1, '/home/xtark/Desktop/perception_project/MR_data_collection/photos')
+        self.camera = Camera('/home/xtark/Desktop/perception_project/MR_data_collection/photos')
+   
+        while self.camera.photos_taken < 3:  #random move for 10 times
+            self.camera.take_photo()
+            rospy.sleep(1) 
+            self.random_move()                 
 
 
 
@@ -62,7 +94,7 @@ class RandomMove():
         self.tf_listener = tf.TransformListener()
         
         # Give tf some time to fill its buffer
-        # rospy.sleep(2)
+        rospy.sleep(2)
         
         # Make sure we see the odom and base frames
         self.tf_listener.waitForTransform(self.odom_frame, self.base_frame, rospy.Time(), rospy.Duration(60.0))        
@@ -143,7 +175,7 @@ class RandomMove():
         self.tf_listener = tf.TransformListener()
         
         # Give tf some time to fill its buffer
-        # rospy.sleep(2)
+        rospy.sleep(2)
         
         # Make sure we see the odom and base frames
         self.tf_listener.waitForTransform(self.odom_frame, self.base_frame, rospy.Time(), rospy.Duration(60.0))        
@@ -222,7 +254,7 @@ class RandomMove():
         self.tf_listener = tf.TransformListener()
         
         # Give tf some time to fill its buffer
-        # rospy.sleep(2)
+        rospy.sleep(2)
         
         # Make sure we see the odom and base frames
         self.tf_listener.waitForTransform(self.odom_frame, self.base_frame, rospy.Time(), rospy.Duration(60.0))
@@ -307,7 +339,7 @@ class RandomMove():
         self.tf_listener = tf.TransformListener()
         
         # Give tf some time to fill its buffer
-        # rospy.sleep(2)
+        rospy.sleep(2)
         
         # Make sure we see the odom and base frames
         self.tf_listener.waitForTransform(self.odom_frame, self.base_frame, rospy.Time(), rospy.Duration(60.0))
@@ -410,8 +442,17 @@ class RandomMove():
         self.cmd_vel.publish(Twist())
         rospy.sleep(1)
  
+# if __name__ == '__main__':
+#     try:
+#         RandomMove()
+#     except:
+#         rospy.loginfo("Program terminated.")
+
+
+ 
 if __name__ == '__main__':
     try:
-        RandomMove()
+       robot = RandomMove()
+       rospy.spin
     except:
         rospy.loginfo("Program terminated.")
