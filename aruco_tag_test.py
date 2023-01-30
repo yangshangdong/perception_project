@@ -7,8 +7,8 @@ from cv2 import aruco
 
 #Aruco detection
 # cap = cv2.VideoCapture(0)
-# cap = cv2.VideoCapture(0)
-cap = cv2.VideoCapture(4)
+cap = cv2.VideoCapture(0)
+# cap = cv2.VideoCapture(4)
 
 while True:
    ret, frame = cap.read()

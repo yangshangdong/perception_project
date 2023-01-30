@@ -16,7 +16,7 @@ robot_goal = Pose()
 
 # modify these based on your enviornment settings
 robot_ID = 6
-robot_goal_ID =5
+robot_goal_ID =7
 
 bottom_left = 1  #this is the origin - positivex: towards bottom right - positivey: towards top left
 bottom_right = 4
@@ -102,7 +102,7 @@ try:
 #        aruco_source.append(im_src)
    aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
   
-   cap = cv2.VideoCapture(4)
+   cap = cv2.VideoCapture(0)
    #pool = mp.Pool(mp.cpu_count()) # init pool for multiprocessing
   
    while True:
