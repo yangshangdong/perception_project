@@ -3,8 +3,6 @@
 
 import os
 import rospy
-import time
-from turtlesim.msg import Pose
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
@@ -12,21 +10,22 @@ from geometry_msgs.msg import Twist, Quaternion,Point
 import tf
 from math import radians, copysign,sqrt,pow,pi
 import random
-import PyKDL
-     
+import PyKDL   
+from std_msgs.msg import Float64MultiArray, Float64
+import time
+
 
 class RandomMoveWithCamera:
     def __init__(self):
         self.image_received = False
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("usb_cam/image_raw", Image, self.image_callback)
-        
-        self.pose_subscriber = rospy.Subscriber('/turtle1/pose', Pose, self.posecallback)
-        self.box1_subscriber = rospy.Subscriber('/turtle1/box1',Pose,self.box1callback)
-        self.robot_pose = Pose()
-        self.box1_pose = Pose()
-        self.move = -1 # intilize number
+        # self.image_sub = rospy.Subscriber("camera/rgb/image_raw", Image, self.image_callback) # simulation
+        self.image_sub = rospy.Subscriber("usb_cam/image_raw", Image, self.image_callback) # real world
 
+        #publisher for the arm
+        self.pub = rospy.Publisher('/joint_trajectory_point', Float64MultiArray, queue_size=10)
+        self.pub_joint_move_time = rospy.Publisher('/joint_move_time', Float64, queue_size=10)
+         
 
         # Give the node a name
         rospy.init_node('random_move_node', anonymous=False)
@@ -37,55 +36,30 @@ class RandomMoveWithCamera:
         # How fast will we check the odometry values?
         self.rate = 20
 
-        # Create a folder to save the images and the action and position data
-        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
-        self.path = '/home/xtark/Desktop/perception_project/MR_data_collection/realworld_datas_'+ timestamp 
+        # Create a folder to save the images
+        self.path = '/home/xtark/Desktop/perception_project/MR_data_collection/turtlebot_photos'
         if not os.path.exists(self.path):
             os.makedirs(self.path)
+
+##   initial pose
+        time.sleep(1)
+        msg = Float64MultiArray()
+        msg.data = self.positions['arm_up_close']
+        self.pub.publish(msg)
+        self.pub_joint_move_time.publish(Float64(1))
+        rospy.loginfo("intial pose")
+        time.sleep(3)
+        # rospy.loginfo("dddd")
         
-        #txt file to save the data
-        self.txt_path = self.path +"/data_collection.txt"  
-        with open(self.txt_path, "a") as file:
-            file.write("n a robot.x robot.y robot.theta box1.x box1.y \n") 
-
-
-        for i in range(20):  #random move for i times
+        for i in range(40):  #random move for i times
             rospy.sleep(0.1)
-            #take photo
+            # rospy.sleep(2)#0.1 #2 definitely work (how about put it in the pick_up and put_down)
             self.take_photo(i)
             rospy.loginfo("Take photo "+str(i+1))
-
-            #save the data
-            rospy.loginfo("datas: %d %d %.2f %.2f %.4f %.2f %.2f",i+1, self.move, self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta,self.box1_pose.x, self.box1_pose.y)
-            with open(self.txt_path, "a") as file:
-                file.write("%d %d %.2f %.2f %.4f %.2f %.2f\n" % (i+1, self.move,self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta, self.box1_pose.x, self.box1_pose.y))
-
-            #random move             
             self.random_move()
-
-
-        #take photo
+            rospy.loginfo("test......... ")
         self.take_photo(i+1)
         rospy.loginfo("Take photo "+str(i+2))
-        #save the data
-        rospy.loginfo("datas: %d %d %.2f %.2f %.4f %.2f %.2f",i+2, self.move,self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta,self.box1_pose.x, self.box1_pose.y)
-        with open(self.txt_path, "a") as file:
-            file.write("%d %d %.2f %.2f %.4f %.2f %.2f\n" % (i+2, self.move,self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta, self.box1_pose.x, self.box1_pose.y))        
-
-
-
-        #Callback function implementing the pose value received
-    def posecallback(self, data):
-        self.robot_pose = data
-        self.robot_pose.x = round(self.robot_pose.x, 1)
-        self.robot_pose.y = round(self.robot_pose.y, 1)
-        self.robot_pose.theta =  round(self.robot_pose.theta, 4)
-        # self.pose.y = 10 - round(self.pose.y, 4) # jpw to unifine the coordinate?
-
-    def box1callback(self, data):
-        self.box1_pose = data
-        self.box1_pose.x = round(self.box1_pose.x, 1)
-        self.box1_pose.y = round(self.box1_pose.y, 1)
 
     def image_callback(self, data):
         try:
@@ -105,7 +79,7 @@ class RandomMoveWithCamera:
 
     def random_move(self):
         # Use the random.randint() function to choose a number between 0 and 3
-        move = random.randint(0, 3)
+        move = random.randint(0, 5)
         if move == 0:
             self.move_forward()
         elif move == 1:
@@ -114,8 +88,86 @@ class RandomMoveWithCamera:
             self.move_left()
         elif move == 3:
             self.move_right()
-        self.move = move
-        return self.move
+        elif move == 4:
+            self.pick_up()
+        elif move == 5:
+            self.put_down()
+
+####################### arm function
+    positions = {
+        'arm_up_close': [1.0, 0.9, 0.8],
+        'arm_up_open': [1.0, 0.9, -2.5],
+        'arm_down_close': [1.0, 0.0, 0.8],
+        'arm_down_open': [1.0, 0.0, -2.5]
+        # 'arm_up_close': [1.0, 0.9, 1.3],
+        # 'arm_up_open': [1.0, 0.9, -3.14],
+        # 'arm_down_close': [1.0, 0.0, 1.3],
+        # 'arm_down_open': [1.0, 0.0, -3.14]
+    }
+    def pick_up(self):
+    # move arm up and open
+        msg = Float64MultiArray()
+        msg.data = self.positions['arm_up_open']
+        self.pub.publish(msg)
+        self.pub_joint_move_time.publish(Float64(1))
+        rospy.loginfo("pick up object")
+        time.sleep(1)
+
+        # move arm down and open
+        msg.data = self.positions['arm_down_open']
+        self.pub.publish(msg)
+        self.pub_joint_move_time.publish(Float64(1))
+        time.sleep(1)
+
+        # move arm down and close
+        msg.data = self.positions['arm_down_close']
+        self.pub.publish(msg)
+        self.pub_joint_move_time.publish(Float64(2.0))
+        time.sleep(2)
+
+        # move arm up and close
+        msg.data = self.positions['arm_up_close']
+        self.pub.publish(msg)
+        self.pub_joint_move_time.publish(Float64(1.0))
+        time.sleep(1)
+        rospy.sleep(3)
+
+
+    def put_down(self):
+        # move arm up and close
+        msg = Float64MultiArray()
+        msg.data = self.positions['arm_up_close']
+        self.pub.publish(msg)
+        self.pub_joint_move_time.publish(Float64(1.0))
+        rospy.loginfo("put down object")       
+        time.sleep(1)
+
+        # move arm down and close
+        msg.data = self.positions['arm_down_close']
+        self.pub.publish(msg)
+        self.pub_joint_move_time.publish(Float64(1.0))
+        time.sleep(1)
+
+        # move arm down and open
+        msg.data = self.positions['arm_down_open']
+        self.pub.publish(msg)
+        self.pub_joint_move_time.publish(Float64(2.0))
+        time.sleep(2)
+
+        # move arm up and open
+        msg.data = self.positions['arm_up_open']
+        self.pub.publish(msg)
+        self.pub_joint_move_time.publish(Float64(1.0))
+        time.sleep(1)
+
+        msg.data = self.positions['arm_up_close']
+        self.pub.publish(msg)
+        self.pub_joint_move_time.publish(Float64(1.0))
+        time.sleep(1)
+        rospy.sleep(3)
+        
+
+###### random move function
 
     def move_forward(self):
         r = rospy.Rate(self.rate)

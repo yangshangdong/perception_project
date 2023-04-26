@@ -10,7 +10,7 @@ from cv_bridge import CvBridge, CvBridgeError
 import cv2
 from geometry_msgs.msg import Twist, Quaternion,Point
 import tf
-from math import radians, copysign,sqrt,pow,pi
+from math import radians, copysign,sqrt,pow,sin,cos,pi
 import random
 import PyKDL
      
@@ -49,7 +49,7 @@ class RandomMoveWithCamera:
             file.write("n a robot.x robot.y robot.theta box1.x box1.y \n") 
 
 
-        for i in range(20):  #random move for i times
+        for i in range(1500):  #random move for i times
             rospy.sleep(0.1)
             #take photo
             self.take_photo(i)
@@ -103,9 +103,44 @@ class RandomMoveWithCamera:
         # Save the image with a specific name
         cv2.imwrite(self.path+'/image'+str(i+1)+'.png', self.cv_image)           
 
+    #strategy 3
     def random_move(self):
-        # Use the random.randint() function to choose a number between 0 and 3
+        # rospy.sleep(5) # for reading
         move = random.randint(0, 3)
+        future_x = self.robot_pose.x
+        future_y = self.robot_pose.y
+        rospy.loginfo("--------predict future movement--------------------")
+        rospy.loginfo("current position: ({}, {})".format(future_x, future_y))
+
+        if move == 0:
+            future_x += 150 * cos(self.robot_pose.theta)
+            future_y += 150 * sin(self.robot_pose.theta)
+        elif move == 1:
+            future_x -= 150 * cos(self.robot_pose.theta)
+            future_y -= 150 * sin(self.robot_pose.theta)
+        elif move == 2:
+            future_x += 50* sin(self.robot_pose.theta + pi/18)
+            future_y -= 50* cos(self.robot_pose.theta + pi/18)
+        elif move == 3:
+            future_x -= 50 * sin(self.robot_pose.theta + pi/18)
+            future_y += 50 * cos(self.robot_pose.theta + pi/18)
+            
+        rospy.loginfo("Future position: ({}, {})".format(future_x, future_y))
+        if future_x >= 1450 or future_x <= 0 or future_y >= 1450 or future_y <= 0:
+            rospy.loginfo("#out of  the boundary, do a void action")       
+            self.move = -1     # represent void action
+            return self.move
+
+        
+        # Avoid hitting the box
+        rospy.loginfo("box position: ({}, {})".format(self.box1_pose.x ,self.box1_pose.y))
+        rospy.loginfo("box error: ({}, {})".format(abs(future_x - self.box1_pose.x)  ,abs(future_y - self.box1_pose.y)))
+        if abs(future_x - self.box1_pose.x) <= 200 and abs(future_y - self.box1_pose.y) <= 200:
+            rospy.loginfo("#will hit the box, do a void action")
+            self.move = -1 #represent void action
+            return self.move 
+
+        rospy.loginfo("--------perform movement")
         if move == 0:
             self.move_forward()
         elif move == 1:
@@ -116,6 +151,7 @@ class RandomMoveWithCamera:
             self.move_right()
         self.move = move
         return self.move
+
 
     def move_forward(self):
         r = rospy.Rate(self.rate)

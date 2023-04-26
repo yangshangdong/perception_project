@@ -10,16 +10,16 @@ from cv_bridge import CvBridge, CvBridgeError
 import cv2
 from geometry_msgs.msg import Twist, Quaternion,Point
 import tf
-from math import radians, copysign,sqrt,pow,pi
+from math import radians, copysign,sqrt,pow,sin,cos,pi
 import random
 import PyKDL
      
 
 class RandomMoveWithCamera:
     def __init__(self):
-        self.image_received = False
-        self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("usb_cam/image_raw", Image, self.image_callback)
+        # self.image_received = False
+        # self.bridge = CvBridge()
+        # self.image_sub = rospy.Subscriber("usb_cam/image_raw", Image, self.image_callback)
         
         self.pose_subscriber = rospy.Subscriber('/turtle1/pose', Pose, self.posecallback)
         self.box1_subscriber = rospy.Subscriber('/turtle1/box1',Pose,self.box1callback)
@@ -37,40 +37,40 @@ class RandomMoveWithCamera:
         # How fast will we check the odometry values?
         self.rate = 20
 
-        # Create a folder to save the images and the action and position data
-        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
-        self.path = '/home/xtark/Desktop/perception_project/MR_data_collection/realworld_datas_'+ timestamp 
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
+        # # Create a folder to save the images and the action and position data
+        # timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
+        # self.path = '/home/xtark/Desktop/perception_project/MR_data_collection/realworld_datas_'+ timestamp 
+        # if not os.path.exists(self.path):
+        #     os.makedirs(self.path)
         
-        #txt file to save the data
-        self.txt_path = self.path +"/data_collection.txt"  
-        with open(self.txt_path, "a") as file:
-            file.write("n a robot.x robot.y robot.theta box1.x box1.y \n") 
+        # #txt file to save the data
+        # self.txt_path = self.path +"/data_collection.txt"  
+        # with open(self.txt_path, "a") as file:
+        #     file.write("n a robot.x robot.y robot.theta box1.x box1.y \n") 
 
 
-        for i in range(20):  #random move for i times
+        for i in range(500):  #random move for i times
             rospy.sleep(0.1)
             #take photo
-            self.take_photo(i)
-            rospy.loginfo("Take photo "+str(i+1))
+            # self.take_photo(i)
+            # rospy.loginfo("Take photo "+str(i+1))
 
-            #save the data
-            rospy.loginfo("datas: %d %d %.2f %.2f %.4f %.2f %.2f",i+1, self.move, self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta,self.box1_pose.x, self.box1_pose.y)
-            with open(self.txt_path, "a") as file:
-                file.write("%d %d %.2f %.2f %.4f %.2f %.2f\n" % (i+1, self.move,self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta, self.box1_pose.x, self.box1_pose.y))
+            # #save the data
+            # rospy.loginfo("datas: %d %d %.2f %.2f %.4f %.2f %.2f",i+1, self.move, self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta,self.box1_pose.x, self.box1_pose.y)
+            # with open(self.txt_path, "a") as file:
+            #     file.write("%d %d %.2f %.2f %.4f %.2f %.2f\n" % (i+1, self.move,self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta, self.box1_pose.x, self.box1_pose.y))
 
             #random move             
             self.random_move()
 
 
-        #take photo
-        self.take_photo(i+1)
-        rospy.loginfo("Take photo "+str(i+2))
-        #save the data
-        rospy.loginfo("datas: %d %d %.2f %.2f %.4f %.2f %.2f",i+2, self.move,self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta,self.box1_pose.x, self.box1_pose.y)
-        with open(self.txt_path, "a") as file:
-            file.write("%d %d %.2f %.2f %.4f %.2f %.2f\n" % (i+2, self.move,self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta, self.box1_pose.x, self.box1_pose.y))        
+        # #take photo
+        # self.take_photo(i+1)
+        # rospy.loginfo("Take photo "+str(i+2))
+        # #save the data
+        # rospy.loginfo("datas: %d %d %.2f %.2f %.4f %.2f %.2f",i+2, self.move,self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta,self.box1_pose.x, self.box1_pose.y)
+        # with open(self.txt_path, "a") as file:
+        #     file.write("%d %d %.2f %.2f %.4f %.2f %.2f\n" % (i+2, self.move,self.robot_pose.x, self.robot_pose.y, self.robot_pose.theta, self.box1_pose.x, self.box1_pose.y))        
 
 
 
@@ -103,9 +103,80 @@ class RandomMoveWithCamera:
         # Save the image with a specific name
         cv2.imwrite(self.path+'/image'+str(i+1)+'.png', self.cv_image)           
 
+    # def random_move(self):
+    #     # Use the random.randint() function to choose a number between 0 and 3
+    #     move = random.randint(0, 3)
+    #     if move == 0:
+    #         self.move_forward()
+    #     elif move == 1:
+    #         self.move_backward()
+    #     elif move == 2:
+    #         self.move_left()
+    #     elif move == 3:
+    #         self.move_right()
+    #     self.move = move
+    #     return self.move
+
+
+
+    # def random_move(self):
+    #     #previous move 1450
+    #     if self.robot_pose.x >= 700 or self.robot_pose.x <= 0 or self.robot_pose.y >= 700 or self.robot_pose.y <= 0:
+    #         rospy.loginfo("out of  the boundary")
+    #         if self.move == 0:
+    #             self.move_backward()
+    #         elif self.move == 1:
+    #             self.move_forward()
+    #         elif self.move == 2:
+    #             self.move_right()
+    #         elif self.move == 3:
+    #             self.move_left()
+    #         return self.move
+
+    #     move = random.randint(0,1)
+    #     rospy.loginfo("within the boundary")
+    #     if move == 0:
+    #         self.move_forward()
+    #     elif move == 1:
+    #         self.move_backward()
+    #     elif move == 2:
+    #         self.move_left()
+    #     elif move == 3:
+    #         self.move_right()
+    #     self.move = move # remember the previous move
+    #     return self.move
+
+    #strategy 2
     def random_move(self):
-        # Use the random.randint() function to choose a number between 0 and 3
+        # rospy.sleep(5) # for reading
         move = random.randint(0, 3)
+        future_x = self.robot_pose.x
+        future_y = self.robot_pose.y
+        rospy.loginfo("current position: ({}, {})".format(future_x, future_y))
+
+        if move == 0:
+            future_x += 150 * cos(self.robot_pose.theta)
+            future_y += 150 * sin(self.robot_pose.theta)
+        elif move == 1:
+            future_x -= 150 * cos(self.robot_pose.theta)
+            future_y -= 150 * sin(self.robot_pose.theta)
+        elif move == 2:
+            future_x += 1* sin(self.robot_pose.theta + pi/18)
+            future_y -= 1 * cos(self.robot_pose.theta + pi/18)
+        elif move == 3:
+            future_x -= 1 * sin(self.robot_pose.theta + pi/18)
+            future_y += 1 * cos(self.robot_pose.theta + pi/18)
+            
+        rospy.loginfo("Future position: ({}, {})".format(future_x, future_y))
+        if future_x >= 600 or future_x <= 0 or future_y >= 600 or future_y <= 0:
+            rospy.loginfo("out of  the boundary, do a void action")           
+            return None
+        
+                # Avoid hitting the box
+        # if abs(future_x - self.box1_pose.x) <= 50 and abs(future_y - self.box1_pose.y) <= 50:
+        #     rospy.loginfo("will hit the box, do a void action")
+        #     return None
+
         if move == 0:
             self.move_forward()
         elif move == 1:
@@ -116,6 +187,7 @@ class RandomMoveWithCamera:
             self.move_right()
         self.move = move
         return self.move
+
 
     def move_forward(self):
         r = rospy.Rate(self.rate)
