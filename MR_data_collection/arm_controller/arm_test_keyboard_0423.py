@@ -7,8 +7,11 @@ rospy.init_node('joint_trajectory_publisher')
 
 # Define the joint positions for each action
 actions = {
-    '1': [1.0, 1.0, 1.0,],
-    '2': [1.0, 0.0, 1.0],
+    # '1': [1.0, 1.0, 1.0,],  #small arm
+    # '2': [1.0, 0.0, 1.0],
+    #  '3': [1.0, 0.0, -3.14]
+    '1': [1.0, 1.0, 3.14],   # big arm
+    '2': [1.0, 0.0, 3.14],
      '3': [1.0, 0.0, -3.14]
 }
 

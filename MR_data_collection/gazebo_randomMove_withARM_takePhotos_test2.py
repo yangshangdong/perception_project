@@ -77,20 +77,33 @@ class RandomMoveWithCamera:
         # Save the image with a specific name
         cv2.imwrite(self.path+'/image'+str(i+1)+'.png', self.cv_image)           
 
+# def random_move(self):
+#     # Use the random.randint() function to choose a number between 0 and 2
+#     move = random.randint(0, 4)
+#     if move == 0:
+#         self.move_forward()
+#     elif move == 1:
+#         self.move_left()
+#     elif move == 2:
+#         self.move_right()
+#     elif move == 3:
+#         self.pick_up()
+#     elif move == 4:
+#         self.put_down()
+
     def random_move(self):
-        # Use the random.randint() function to choose a number between 0 and 3
-        move = random.randint(0, 5)
-        if move == 0:
+        # Use the random.random() function to generate a random number between 0 and 1
+        p = random.random()
+
+        if p < 0.3:
             self.move_forward()
-        elif move == 1:
-            self.move_backward()
-        elif move == 2:
+        elif p < 0.6:
             self.move_left()
-        elif move == 3:
+        elif p < 0.9:
             self.move_right()
-        elif move == 4:
+        elif p < 0.95:
             self.pick_up()
-        elif move == 5:
+        else:
             self.put_down()
 
 ####################### arm function

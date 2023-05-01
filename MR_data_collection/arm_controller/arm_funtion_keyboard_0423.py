@@ -9,10 +9,14 @@ rospy.init_node('arm_controller')
 
 # Define the joint positions for each action
 positions = {
-    'arm_up_close': [1.0, 0.9, 0.8],
-    'arm_up_open': [1.0, 0.9, -2.5],
-    'arm_down_close': [1.0, 0.0, 0.8],
-    'arm_down_open': [1.0, 0.0, -2.5]
+    'arm_up_close': [1.0, 0.9, 3.14], #big arm
+    'arm_up_open': [1.0, 0.9, -3.14],
+    'arm_down_close': [1.0, 0.0,3.14],
+    'arm_down_open': [1.0, 0.0, -3.14]
+    # 'arm_up_close': [1.0, 0.9, 0.8], #small arm
+    # 'arm_up_open': [1.0, 0.9, -2.5],
+    # 'arm_down_close': [1.0, 0.0, 0.8],
+    # 'arm_down_open': [1.0, 0.0, -2.5]
     # 'arm_up_close': [1.0, 0.9, 1.3],
     # 'arm_up_open': [1.0, 0.9, -3.14],
     # 'arm_down_close': [1.0, 0.0, 1.3],
